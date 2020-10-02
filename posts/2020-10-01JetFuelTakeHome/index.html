@@ -4,4 +4,30 @@ layout.<span class="property">scrollDirection</span> = .<span class="dotAccess">
 <span class="keyword">let</span> navController = <span class="type">UINavigationController</span>(rootViewController: feedCollectionViewController)
 window?.<span class="property">rootViewController</span> = navController
 window?.<span class="call">makeKeyAndVisible</span>()
-</code></pre><p>This gave me a setup UICollectionViewController to work with. Now I needed to make it show something to verify it was working. By setting numberOfItemsInSection to 5 and creating a new CollecitonViewCell subclass and registering it in viewDidLoad, I now had a working CollectionView...</p><img src="/images/posts/TakeHomeChallenge/firstCVCells.png" alt="firstCVCells" width="500"/></div></div></div><div class="footer pure-u-1"><div class="pure-u-1">© 2020 Chad Rutherford</div><div class="pure-u-1">Generated using <a href="https://github.com/johnsundell/publish">Publish</a>. Written in Swift</div></div></div></body></html>
+</code></pre><p>This gave me a setup UICollectionViewController to work with. Now I needed to make it show something to verify it was working. By setting numberOfItemsInSection to 5 and creating a new CollecitonViewCell subclass and registering it in viewDidLoad, I now had a working CollectionView...</p><img src="/images/posts/TakeHomeChallenge/firstCVCells.png" alt="firstCVCells" width="500"/><p>The next step was to make the cells bigger and start adding and constraining items in it to match the design spec. I extended FeedCollectionViewController to conform to UICollectionViewDelegateFlowLayout and set up a <code></code><code>CGSize(width: collectionView.frame.width, height: 360)</code><code></code> and then added programmatic UI Elements. Starting with a UIImageView, I pinned it to the top of the contentView and constrained it's width and height. then I added 3 labels. One for the campaign name, price per download and a label to say "per install".</p><p>This is what my configureUI method looks like:</p><pre><code><span class="keyword">private func</span> configureUI() {
+	contentView.<span class="call">addSubview</span>(iconImageView)
+	contentView.<span class="call">addSubview</span>(nameLabel)
+	contentView.<span class="call">addSubview</span>(payLabel)
+	contentView.<span class="call">addSubview</span>(payPerInstallLabel)
+	<span class="type">NSLayoutConstraint</span>.<span class="call">activate</span>([
+		
+		iconImageView.<span class="property">topAnchor</span>.<span class="call">constraint</span>(equalTo: contentView.<span class="property">topAnchor</span>, constant: <span class="number">20</span>),
+		iconImageView.<span class="property">leadingAnchor</span>.<span class="call">constraint</span>(equalTo: contentView.<span class="property">leadingAnchor</span>, constant: <span class="number">20</span>),
+		iconImageView.<span class="property">heightAnchor</span>.<span class="call">constraint</span>(equalToConstant: <span class="number">60</span>),
+		iconImageView.<span class="property">widthAnchor</span>.<span class="call">constraint</span>(equalTo: iconImageView.<span class="property">heightAnchor</span>, multiplier: <span class="number">1</span>),
+		
+		nameLabel.<span class="property">topAnchor</span>.<span class="call">constraint</span>(equalTo: iconImageView.<span class="property">topAnchor</span>, constant: <span class="number">8</span>),
+		nameLabel.<span class="property">leadingAnchor</span>.<span class="call">constraint</span>(equalTo: iconImageView.<span class="property">trailingAnchor</span>, constant: <span class="number">16</span>),
+		nameLabel.<span class="property">trailingAnchor</span>.<span class="call">constraint</span>(greaterThanOrEqualTo: contentView.<span class="property">trailingAnchor</span>, constant: -<span class="number">20</span>),
+		nameLabel.<span class="property">heightAnchor</span>.<span class="call">constraint</span>(equalToConstant: <span class="number">20</span>),
+		
+		payLabel.<span class="property">topAnchor</span>.<span class="call">constraint</span>(equalTo: nameLabel.<span class="property">bottomAnchor</span>),
+		payLabel.<span class="property">leadingAnchor</span>.<span class="call">constraint</span>(equalTo: nameLabel.<span class="property">leadingAnchor</span>),
+		payLabel.<span class="property">heightAnchor</span>.<span class="call">constraint</span>(equalToConstant: <span class="number">25</span>),
+		payLabel.<span class="property">trailingAnchor</span>.<span class="call">constraint</span>(equalTo: payPerInstallLabel.<span class="property">leadingAnchor</span>, constant: -<span class="number">4</span>),
+		
+		payPerInstallLabel.<span class="property">topAnchor</span>.<span class="call">constraint</span>(equalTo: nameLabel.<span class="property">bottomAnchor</span>),
+		payPerInstallLabel.<span class="property">heightAnchor</span>.<span class="call">constraint</span>(equalToConstant: <span class="number">25</span>)
+	])
+}
+</code></pre><p>and here are the results:</p><img src="/images/posts/TakeHomeChallenge/dummyCVCells.png" alt="dummyCVCells" width="500"/></div></div></div><div class="footer pure-u-1"><div class="pure-u-1">© 2020 Chad Rutherford</div><div class="pure-u-1">Generated using <a href="https://github.com/johnsundell/publish">Publish</a>. Written in Swift</div></div></div></body></html>
