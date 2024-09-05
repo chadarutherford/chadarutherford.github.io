@@ -1,0 +1,117 @@
+<!DOCTYPE html><html lang="en"><head><title>Chad Rutherford - iOS Developer with experience in Swift and Objective-C</title><meta name="twitter:title" content="Chad Rutherford - iOS Developer with experience in Swift and Objective-C"/><meta property="og:title" content="Chad Rutherford - iOS Developer with experience in Swift and Objective-C"/><meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/pure-min.css" integrity="sha384-cg6SkqEOCV1NbJoCu11+bm0NvBRc8IYLRGXkmNrqUBfTjmMYwNKPWBTIKyw9mHNJ" crossorigin="anonymous"/><script src="https://kit.fontawesome.com/67788e6bc8.js" crossorigin="anonymous"></script><link rel="stylesheet" href="https://unpkg.com/purecss@2.0.3/build/grids-responsive-min.css"/><link rel="stylesheet" href="/Pure/styles.css"/><link rel="stylesheet" href="/all.css"/><link rel="shortcut icon" href="/images/favicon.png"/></head><body><div id="layout" class="pure-g"><div><div class="pure-menu pure-menu-horizontal pure-u-1-1 top-header"><a class="pure-menu-heading" href="/">Chad Rutherford - Portfolio</a><ul class="pure-menu-list"><li class="pure-menu-item"><a class="pure-menu-link" href="/projects">Projects</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/posts">Blog</a></li><li class="pure-menu-item"><a class="pure-menu-link" href="/about">About</a></li></ul></div></div><div class="sidebar pure-u-1 pure-u-md-1-4"><div class="header"><div id="layout" class="pure-g"><div class="author__avatar"><img src="https://avatars2.githubusercontent.com/u/16213161?s=400&u=e61da9f734de6454e61f4eff08eb913aa5e33be3&v=4"/></div><div class="pure-u-md-1-1 pure-u-3-4"><h1 class="brand-title">Chad Rutherford</h1><h3 class="brand-tagline">iOS Developer with experience in Swift and Objective-C</h3></div></div><div id="layout" class="pure-g"><div class="pure-u-md-1-1"><a href="https://en.wikipedia.org/wiki/Weirton,_West_Virginia"><i class="fas fa-map-marker-alt l-box social icon"></i><a class="social-media" href="https://en.wikipedia.org/wiki/Weirton,_West_Virginia">Weirton, WV USA</a></a></div><div class="pure-u-md-1-1"><a href="mailto:chad_rutherford@outlook.com"><i class="fas fa-envelope-open-text l-box social icon"></i><a class="social-media" href="mailto:chad_rutherford@outlook.com">Email</a></a></div><div class="pure-u-md-1-1"><a href="https://www.linkedin.com/in/chadarutherford"><i class="fa fa-linkedin l-box social icon"></i><a class="social-media" href="https://www.linkedin.com/in/chadarutherford">LinkedIn</a></a></div><div class="pure-u-md-1-1"><a href="https://github.com/chadarutherford"><i class="fa fa-github-square l-box social icon"></i><a class="social-media" href="https://github.com/chadarutherford">GitHub</a></a></div><div class="pure-u-md-1-1"><a href="https://twitter.com/chadiosdev"><i class="fa fa-twitter-square l-box social icon"></i><a class="social-media" href="https://twitter.com/chadiosdev">Twitter</a></a></div></div></div></div><div class="content pure-u-1 pure-u-md-3-5 pure-u-xl-6-10"><h2 class="post-title"><a href="/posts/2020-04-24spm-post">Creating a networking framework</a></h2><p class="post-meta">April 24, 2020</p><div class="post-tags"><a class="post-category post-category-blog" href="/tags/blog">Blog</a><a class="post-category post-category-swift" href="/tags/swift">Swift</a><a class="post-category post-category-spm" href="/tags/spm">SPM</a><a class="post-category post-category-xctest" href="/tags/xctest">XCTest</a></div><div class="post-description"><div><h2>Creating a Framework for SPM</h2><hr><p>I recently decided with my growing experience with Swift programming, that it would be an exciting adventure to create a Swift package to use with SPM (Swift Package Manager). It was a small task, just to get some experience with creating an external library.</p><p>I started off very small with a networking manager. I implemented a networking class, complete with the new Result type and Swift Generics to enable quick decoding without cluttering up my project with most of the boilerplate networking code most developers write over and over again.</p><p>So to enable custom errors I implemented my own NetworkError enum.</p><pre><code>enum NetworkError: Error {
+	case unknownError
+	case invalidResponse
+	case invalidData
+	case decodeError
+	
+	var localizedDescription: String {
+		switch self {
+		case .unknownError:
+			return "An unknown error occurred"
+		case .invalidResponse:
+			return "The response from the server was invalid. Please try again"
+		case .invalidData:
+			return "The data returned from the server was invalid."
+		case .decodeError:
+			return "There was an error decoding objects."
+		}
+	}
+}
+</code></pre><p>After that, I decided to enumerate the different HTTP Methods to remove hard-coded strings in my projects</p><pre><code>enum HTTPMethod: String {
+	case get = "GET"
+	case post = "POST"
+	case delete = "DELETE"
+	case put = "PUT"
+}
+</code></pre><p>Now that I had the basic building blocks for a network call, I decided to make a network loader protocol so that I could mock network calls to enable easier testing. Also making sure to extend URLSession and make it adhere to my protocol.</p><pre><code>protocol NetworkDataLoader {
+	func loadData(using url: URL, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void)
+	func loadData(using request: URLRequest, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void)
+}
+
+extension URLSession: NetworkDataLoader {
+	func loadData(using url: URL, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void) {
+		dataTask(with: url) { data, response, error in
+			completion(data, response as? HTTPURLResponse, error)
+		}.resume()
+	}
+	
+	 func loadData(using request: URLRequest, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void) {
+		dataTask(with: request) { data, response, error in
+			completion(data, response as? HTTPURLResponse, error)
+		}.resume()
+	}
+}
+</code></pre><p>With all that done, now it was time to dive into the networking. I made a generic decoding method to decode whatever objects you throw at it with ease.</p><pre><code>private func decode&lt;T: Decodable&gt;(to type: T.Type, data: Data) -&gt; T? {
+	let decoder = JSONDecoder()
+	do {
+		let decodedType = try decoder.decode(T.self, from: data)
+		return decodedType
+	} catch {
+		return nil
+	}
+}
+</code></pre><p>Finally, one more method left to enable me to run networking calls. I had to write a decodeObjects method to take advantge of my new decode method. I added an initializer to set the networking mechanism which allowed me to swap out a mock class for URLSession when it came time to write tests. I also included a Set of known success codes for HTTP Responses. After drilling through and handling all errors, I finally get to "the happy path" and decode my objects.</p><pre><code>private let networkLoader: NetworkDataLoader
+private let expectedResponseCodes = Set.init(200 ... 299)
+
+init(networkLoader: NetworkDataLoader = URLSession.shared) {
+	self.networkLoader = networkLoader
+}
+
+func decodeObjects&lt;T: Decodable&gt;(using url: URL, completion: @escaping (Result&lt;T, NetworkError&gt;) -&gt; Void) {
+	networkLoader.loadData(using: url) { data, response, error in
+		guard error == nil else {
+			completion(.failure(.unknownError))
+			return
+		}
+		
+		if let response = response, !self.expectedResponseCodes.contains(response.statusCode) {
+			completion(.failure(.invalidResponse))
+			return
+		}
+		
+		guard let data = data else {
+			completion(.failure(.invalidData))
+			return
+		}
+		
+		guard let results = self.decode(to: T.self, data: data) else {
+			completion(.failure(.decodeError))
+			return
+		}
+		
+		completion(.success(results))
+	}
+}
+</code></pre><p>Now that all looks great right? Generic code, no build errors , bundled up into a Swift Package so I can import it into any project and networking worries are gone right?</p><p>Wrong!</p><p>The experienced iOS developers would see the issue in a heartbeat. This works fine for testing and networking in this bundle. But once imported into another project, I had no access to my initializer or any of my methods.</p><p>So back to the drawing board. I eventually discovered my issue was access control.</p><p>So I made the following changes.</p><pre><code>public enum NetworkError: Error { ...
+	public var localizedDescription: String {
+		...
+	}
+}
+
+public enum HTTPMethod: String {
+	...
+}
+
+public protocol NetworkDataLoader {
+	...
+}
+
+extension URLSession: NetworkDataLoader {
+	public func loadData(using url: URL, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void) {
+		...
+	}
+	
+	 public func loadData(using request: URLRequest, completion: @escaping (Data?, HTTPURLResponse?, Error?) -&gt; Void) {
+		...
+	}
+}
+
+public init(networkLoader: NetworkDataLoader = URLSession.shared) {
+	...	
+}
+
+public func decodeObjects&lt;T: Decodable&gt;(using url: URL, completion: @escaping (Result&lt;T, NetworkError&gt;) -&gt; Void) {
+	...
+}
+
+</code></pre><p>Success! I was now able to access the "public API" of my framework and run the methods I had worked so hard on writing.</p><p>I tested out my framework in a simple TableView by querying the pokeAPI and achieved success. My generic decoder was working and I now had populated a TableView with data from an API and had absolutely zero networking code in my app aside from the framework I created and imported into my app with Swift Package Manager!</p><p>I can't wait to further my knowledge and create a framework that is more powerful, but this was a fun start and I learned a lot about creating and managing frameworks and access levels.</p><p>Stay tuned for more goodies as I expand my knowledge and create more cool tools!</p></div></div></div><div class="footer pure-u-1"><div class="pure-u-1">© 2024 Chad Rutherford</div><div class="pure-u-1">Generated using <a href="https://github.com/johnsundell/publish">Publish</a>. Written in Swift</div></div></div></body></html>
